@@ -262,9 +262,9 @@ class SIDTD(Dataset):
         
  
         for clas, img_set in map_imgs.items():
-            template = self.read_json(map_annotations[clas]) #dict
+            template = read_json(map_annotations[clas]) #dict
             path_ann_save = os.path.join(self._path_to_download, self._original_ann_path,clas)
-            self.write_json(template, path_ann_save, clas)
+            write_json(template, path_ann_save, clas)
             
             path_img_save = os.path.join(self._path_to_download, self._original_imgs_path, clas)
             for img in img_set:
@@ -283,9 +283,9 @@ class SIDTD(Dataset):
         map_annotations = self.create_and_map_classes_annotations(path=ann_abs_path)
 
         for clas, img_set in map_imgs.items():
-            template = self.read_json(map_annotations[clas]) #dict
+            template = read_json(map_annotations[clas]) #dict
             path_ann_save = os.path.join(self._path_to_download, self._original_ann_path,clas)
-            self.write_json(template, path_ann_save, clas)
+            write_json(template, path_ann_save, clas)
             
             path_img_save = os.path.join(self._path_to_download, self._original_imgs_path, clas)
             for img in img_set:
