@@ -1,5 +1,10 @@
-from SIDTD.data.DataLoader.Datasets  import *
-from SIDTD.utils.util import read_img
+try:
+    from SIDTD.data.DataLoader.Datasets  import *
+    from SIDTD.utils.util import read_img
+
+except:
+    from Datasets  import *
+    from util import read_img
 
 from typing import *
 from PIL.Image import Image
@@ -98,15 +103,12 @@ class DataLoader(object):
         self._datasets = [SIDTD, Dogs, Fungus, Findit, Banknotes]
 
         self._dt = list(filter(lambda dts : dts.__name__ == self._dataset, self._datasets))[0]()
-        self._map_classes = self._dt.map_classes(type_data=kind)
-
+        self._map_classes = self._dt.mapping_classes(type_data=kind)
         ### DOWNLOADING THE DATASET TO MAKE THE EXPERIMENTS ###
         
         logging.info("Searching for the dataset in the current working directory")  
 
         flag, self._dataset_path = self.control_download(to_search=dataset)
-        print(self._dataset_path)
-        print(flag)
         if flag is False:
             logging.warning("The dataset hasnt been found, starting to download")
             print("The dataset hasnt been found, starting to download")
@@ -136,6 +138,7 @@ class DataLoader(object):
             time.sleep(1)
             self._dt.download_static_csv(partition_kind=type_split, type_download=kind)
             logging.info("CSV Download in {}".format(os.path.join(os.getcwd(), "data", "static")))
+            print("CSV Download in {}".format(os.path.join(os.getcwd(), "data", "static")))
 
         else:
             logging.info(f"Preparing partitions for the {type_split} partition behaviour")
@@ -158,7 +161,7 @@ class DataLoader(object):
                 if few_shot_split[0] != "random":
                     raise NotImplementedError
 
-                self._shot_partition(new_df, proportion=few_shot_split[1:],metaclasses=metaclasses, kind=kind)
+                self._shot_partition(new_df, proportion=few_shot_split[1:], metaclasses=metaclasses, kind=kind)
 
             else:
                 self._hold_out_partition(new_df, kind=kind)
@@ -217,7 +220,8 @@ class DataLoader(object):
 
     def _shot_partition(self,new_df, proportion:list = [0.6,0.4], metaclasses:list = ["id", "passport"], kind:str= "templates"):
 
-
+        
+        print(metaclasses)
         split_dir = os.path.join('split_shot', kind, self._dataset) if self._unbalanced == False else os.path.join('split_shot_unbalanced', kind, self._dataset)
         metatrain_prop, metatest_prop = float(proportion[0]), float(proportion[1])
          
@@ -242,10 +246,8 @@ class DataLoader(object):
         test = pd.DataFrame()
         
         groups = list(grouped_pandas.groups.keys())
-      
         train_groups = random.sample(groups, round(metatrain_prop * len(groups)))
         test_groups = list(set(groups)- set(train_groups))
-
         for name, group in grouped_pandas:
 
             if bool(set([name])&set(train_groups)) == True:             
@@ -418,10 +420,12 @@ if __name__ == "__main__":
         )
 
     elif args.type_split == "few_shot":
-        parser.add_argument("--few_shot_split", nargs="+", default=["random", 0.75, 0.25],
+        parser.add_argument("--few_shot_split", nargs="+", default=["random", 0.6, 0.4],
                             help="Define the split behavior for few-shot learning. The first value must be either 'random' or 'ranked', and the other values must specify the proportions.")
         parser.add_argument("--metaclasses", nargs="+", default=["id", "passport"],
                             help="Define the second level to group the metatrain and the metatest")
+
+#["alb", "est", "esp", "svk", "fin", "srb", "grc", "rus", "lva", "aze"]
 
         options = parser.parse_args()
         print(options.few_shot_split)

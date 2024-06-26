@@ -1,6 +1,10 @@
 import logging
 
-from SIDTD.utils.util import *
+try:
+    from SIDTD.utils.util import *
+
+except:
+    from util import *
 
 
 from abc import ABC,abstractmethod
@@ -34,9 +38,7 @@ class Dataset(ABC):
     def num_real_classes(self):
         raise NotImplementedError
 
-    @abstractmethod
-    def map_classes(self):
-        raise NotImplementedError
+
 
     @abstractmethod
     def number_of_real_sampling(self):
@@ -340,15 +342,18 @@ class SIDTD(Dataset):
         return map_annotation    
 
 
-    def map_classes(self, type_data:str="templates"):
+    def mapping_classes(self, type_data:str="templates"):
+
+        
         classes = {"reals":{}, "fakes":{}}
         if type_data == "videos":
-            fakes = [(file, "fakes") for file in glob.glob(os.path.join(os.getcwd(), "datasets",self.__name__(),type_data, 'fakes',"*"))]
-            reals = [(file, "reals") for file in glob.glob(os.path.join(os.getcwd(), "datasets",self.__name__(), type_data, 'reals',"*"))]
-        else:     
-            fakes = [(file, "fakes") for file in glob.glob(os.path.join(os.getcwd(), "datasets",self.__name__(),type_data, "Images", 'fakes',"*"))]
-            reals = [(file, "reals") for file in glob.glob(os.path.join(os.getcwd(), "datasets",self.__name__(), type_data, "Images", 'reals',"*"))]
-        
+            fakes = [(file, "fakes") for file in glob.glob(os.path.join(os.getcwd(), self.__name__(),type_data, 'fakes',"*"))]
+            reals = [(file, "reals") for file in glob.glob(os.path.join(os.getcwd(), self.__name__(), type_data, 'reals',"*"))]
+        else:    
+            print(type_data)
+            fakes = [(file, "fakes") for file in glob.glob(os.path.join(os.getcwd(),self.__name__(),type_data, "Images", 'fakes',"*"))]
+            reals = [(file, "reals") for file in glob.glob(os.path.join(os.getcwd(),self.__name__(), type_data, "Images", 'reals',"*"))]
+
         for file in (fakes+reals):
             section = classes[file[1]]
             clas = file[0].split("/")[-1].split("_")[0]
