@@ -77,8 +77,8 @@ class DataLoader(object):
         hold_out_split = list(float(x) for x in hold_out_split)
         if type_split == "hold_out": assert (type(hold_out_split) == list and int(np.sum(hold_out_split)) == 1)
         elif type_split == "kfold": assert (kfold_split > 0 and type(kfold_split) == int)
-        elif type_split == "shot": assert (isinstance(hold_out_split, list) and len(hold_out_split) == 3 and isinstance(hold_out_split[0], str)
-                                           and isinstance(hold_out_split[1], float) and isinstance(hold_out_split[2], float)), "Some parameter have been badly declared"
+        elif type_split == "shot": assert (isinstance(few_shot_split, list) and len(few_shot_split) == 3 and isinstance(few_shot_split[0], str)
+                                           and isinstance(few_shot_split[1], float) and isinstance(few_shot_split[2], float)), "Some parameter have been badly declared"
 
         assert dataset in ["SIDTD", "Dogs", "Fungus", "Findit", "Banknotes"]
 
@@ -102,12 +102,14 @@ class DataLoader(object):
 
         ### DOWNLOADING THE DATASET TO MAKE THE EXPERIMENTS ###
         
-        logging.info("Searching for the dataset in the current working directory")
+        logging.info("Searching for the dataset in the current working directory")  
 
         flag, self._dataset_path = self.control_download(to_search=dataset)
+        print(self._dataset_path)
         print(flag)
         if flag is False:
             logging.warning("The dataset hasnt been found, starting to download")
+            print("The dataset hasnt been found, starting to download")
             time.sleep(1)
             if self._dataset == "SIDTD":
                 self._dt.download_dataset(type_download=kind)
@@ -116,22 +118,20 @@ class DataLoader(object):
 
             logging.info("Dataset Download in {}".format(os.path.join(self._dt._uri.split("/")[-2], "explore")))
         else:
-            print(self._dataset_path)
+            print("Dataset found")
             kinds = os.listdir(self._dataset_path)
             if kind not in kinds:
                 self._dt.download_dataset(type_download=kind)
 
             else:
+                print("checkin gif the dataset is not empty")
                 empty = (len(glob.glob(os.path.join(self._dataset_path, kind, "Images","fakes", "*"))) == 0) and (len(glob.glob(os.path.join(self._dataset_path, kind, "Images", "reals", "*"))) == 0)
                 if empty:
                     os.rmdir(os.path.join(self._dataset_path, kind))
                     self._dt.download_dataset(type_download=kind)
-                else:
-                    logging.info(f"Dataset found in {self._dataset_path}, check if it is empty")
 
 
         ###### CSV DOWNLOAD PART
-            
         if download_static == True:
             time.sleep(1)
             self._dt.download_static_csv(partition_kind=type_split, type_download=kind)
@@ -139,6 +139,7 @@ class DataLoader(object):
 
         else:
             logging.info(f"Preparing partitions for the {type_split} partition behaviour")
+            print(f"Preparing partitions for the {type_split} partition behaviour")
             new_df =  self._prepare_csv(kind=kind)
 
             ######### UNCOMMENT THIS LINE WHEN CODE IS FINISHED #########
@@ -147,6 +148,7 @@ class DataLoader(object):
 
             if len(new_df)  == 0:
                 logging.error("Some error occurred and the data couldnt been downloaded")
+                print("Some error occurred and the data couldnt been downloaded")
                 sys.exit()
 
             if type_split == "kfold":
@@ -216,7 +218,7 @@ class DataLoader(object):
     def _shot_partition(self,new_df, proportion:list = [0.6,0.4], metaclasses:list = ["id", "passport"], kind:str= "templates"):
 
 
-        split_dir = os.path.join(self._save_dir,'split_shot', kind, self._dataset) if self._unbalanced == False else os.path.join(self._save_dir,'split_shot_unbalanced', kind, self._dataset)
+        split_dir = os.path.join('split_shot', kind, self._dataset) if self._unbalanced == False else os.path.join('split_shot_unbalanced', kind, self._dataset)
         metatrain_prop, metatest_prop = float(proportion[0]), float(proportion[1])
          
         ngroups = len(metaclasses)
@@ -260,6 +262,7 @@ class DataLoader(object):
 
         
         print('Splitting dataset into {}-shot partition with meta_train/meta_test sets...'.format(self._few_shot_split))
+
         df_train.to_csv(split_dir+'/train_split_' + self._dataset + '.csv', index=False)
         df_test.to_csv(split_dir+'/test_split_' + self._dataset + '.csv', index=False)
 
@@ -274,7 +277,7 @@ class DataLoader(object):
     def _hold_out_partition(self, new_df, kind:str="templates") -> Tuple[List[Image], List[Image], List[Image]]:
 
         # Window to split the dataset in training/validation/testing set for the 10-fold
-        split_dir = os.path.join(self._save_dir,'hold_out', kind, self._dataset) if self._unbalanced == False else os.path.join(self._save_dir,'hold_out_unbalanced', kind, self._dataset)
+        split_dir = os.path.join('hold_out', kind, self._dataset) if self._unbalanced == False else os.path.join('hold_out_unbalanced', kind, self._dataset)
 
         if not os.path.exists(split_dir):
             os.makedirs(split_dir)
@@ -304,13 +307,15 @@ class DataLoader(object):
         l_img = []
         l_conditioned = []
 
-        for file in glob.glob('{}/*/*'.format(os.path.join(os.getcwd(), "datasets",self._dataset, kind, "Images"))):
+        print(self._dataset)
+
+        for file in glob.glob('{}/*/*'.format(os.path.join(os.getcwd(),self._dataset, kind, "Images"))):
             path = file.replace('\\', '/')
             path_decompose = path.split('/')
             if path_decompose[-1].startswith("index"):continue
             label = list(filter(lambda x: x in ["reals", "fakes"], path_decompose))[0]
             l_label.append(label)
-            l_img.append(file)
+            l_img.append("/".join(file.split("/")[6:]))
             clas_to_ap = self._map_classes[label]
             l_conditioned.append(clas_to_ap.get(file, -1))
 
